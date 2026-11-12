@@ -573,10 +573,10 @@ const App = (() => {
     container.innerHTML = html;
     bindExampleEvents(chapter);
     bindExerciseEvents(chapter);
-    // 初始渲染"补画第三视图"题的题目画布
-    requestAnimationFrame(() => {
+    // 初始渲染"补画第三视图"题的题目画布（等布局完成再渲染）
+    setTimeout(() => {
       container.querySelectorAll('.exv-canvas').forEach(cv => renderCompleteCanvas(cv, false));
-    });
+    }, 60);
     const gc = document.getElementById('guide-center');
     if (gc) gc.scrollTop = 0;
   }

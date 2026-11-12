@@ -269,5 +269,8 @@ const Views = (() => {
     </div>`;
   }
 
-  return { getViews, renderLayout, VIEW_NAMES };
+  const api = { getViews, renderLayout, VIEW_NAMES };
+  // 挂到 window，供其他模块检测和使用（const 声明不会自动挂 window）
+  if (typeof window !== 'undefined') window.Views = api;
+  return api;
 })();
