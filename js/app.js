@@ -76,6 +76,17 @@ const App = (() => {
     if (currentSection === 'theory') { showTheory(); hideProblemArea(); hideSolution(); }
     else if (currentSection === 'example') { showExample(); }
     else if (currentSection === 'exercise') { showExercise(); }
+    // 手机端：切换后自动滚到内容区（否则变化发生在屏幕外，像没反应）
+    requestAnimationFrame(mobileScrollToContent);
+  }
+
+  // 手机端自动滚动到中央内容区
+  function mobileScrollToContent() {
+    if (window.innerWidth > 768) return;
+    const sec = document.getElementById('sec-practice');
+    if (!sec || !sec.classList.contains('active')) return;
+    const pc = sec.querySelector('.panel-center');
+    if (pc) pc.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function loadChapter(chId) {
@@ -332,6 +343,8 @@ const App = (() => {
         });
       }
     }
+    // 手机端：切换视图后滚到画布区
+    requestAnimationFrame(mobileScrollToContent);
   }
 
   function hideProblemArea() {

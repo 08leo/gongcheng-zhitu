@@ -380,8 +380,8 @@ select:focus,input:focus{border-color:var(--accent)}
 
   /* ── 分章节学习 ── */
   .panel-body{padding:12px}
-  #sec-practice .panel-center{height:60vh;position:relative}
-  #content-area{position:static;height:auto;padding:16px 14px}
+  #sec-practice .panel-center{height:62vh;position:relative}
+  #content-area{position:absolute;top:0;left:0;width:100%;height:100%;overflow-y:auto;padding:16px 14px}
   .view-switcher{flex-wrap:wrap;gap:4px;padding:8px 10px}
 
   /* ── 教程 ── */
