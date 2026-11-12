@@ -420,14 +420,16 @@ const App = (() => {
     updateGuideCamera();
     setupGuideOrbit(canvas);
     guideAnimate();
-    // 监听 canvas 尺寸变化（面板显示后尺寸会变）
+    // 监听 canvas 尺寸变化（面板显示后尺寸会变；下一帧执行，避免 ResizeObserver loop 警告）
     const ro = new ResizeObserver(() => {
-      const cw = canvas.clientWidth, ch = canvas.clientHeight;
-      if (cw > 0 && ch > 0) {
-        guideCamera.aspect = cw / ch;
-        guideCamera.updateProjectionMatrix();
-        guideRenderer.setSize(cw, ch);
-      }
+      requestAnimationFrame(() => {
+        const cw = canvas.clientWidth, ch = canvas.clientHeight;
+        if (cw > 0 && ch > 0) {
+          guideCamera.aspect = cw / ch;
+          guideCamera.updateProjectionMatrix();
+          guideRenderer.setSize(cw, ch);
+        }
+      });
     });
     ro.observe(canvas);
   }

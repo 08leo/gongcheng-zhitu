@@ -689,12 +689,15 @@ const Crash = (() => {
     animate();
 
     new ResizeObserver(() => {
-      const cw = canvas.clientWidth, ch = canvas.clientHeight;
-      if (cw > 0 && ch > 0) {
-        camera.aspect = cw / ch;
-        camera.updateProjectionMatrix();
-        renderer.setSize(cw, ch);
-      }
+      // 推迟到下一帧，避免 ResizeObserver loop 警告
+      requestAnimationFrame(() => {
+        const cw = canvas.clientWidth, ch = canvas.clientHeight;
+        if (cw > 0 && ch > 0) {
+          camera.aspect = cw / ch;
+          camera.updateProjectionMatrix();
+          renderer.setSize(cw, ch);
+        }
+      });
     }).observe(canvas);
   }
 
@@ -833,9 +836,9 @@ const Crash = (() => {
       btn.addEventListener('click', () => setView(btn.dataset.v));
     });
 
-    // 视图画布尺寸变化时重绘
+    // 视图画布尺寸变化时重绘（下一帧执行，避免 ResizeObserver loop 警告）
     const vc = document.getElementById('crash-views-canvas');
-    if (vc) new ResizeObserver(() => renderViews()).observe(vc);
+    if (vc) new ResizeObserver(() => requestAnimationFrame(renderViews)).observe(vc);
 
     // 快捷键：空格显示答案，←→ 切题
     document.addEventListener('keydown', e => {
