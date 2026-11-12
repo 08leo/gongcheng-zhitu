@@ -338,9 +338,13 @@ select:focus,input:focus{border-color:var(--accent)}
 
 /* ── 三视图 HTML 布局（教程课后习题 Views.renderLayout） ── */
 .three-view-layout{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.view-cell{position:relative;min-height:150px;background:#f5f0e8;border:1px solid var(--border);border-radius:6px;overflow:hidden}
-.view-cell .view-svg{position:absolute;top:0;left:0;width:100%;height:100%}
+.view-cell{position:relative;min-height:170px;background:#f5f0e8;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.view-cell .view-svg{position:absolute;top:22px;left:0;width:100%;height:calc(100% - 22px)}  /* 顶部留标签条，防遮挡图形 */
 .view-cell.answer{border-color:var(--success)}
+
+/* ── 3D 模型弹窗：固定高度，否则 canvas height:100% 塌陷为 0 ── */
+#model-modal > div{height:84vh !important}
+#model-modal > div > div:nth-of-type(2){flex:1;min-height:0}
 
 /* ═══════════════════════════════════════
    📱 移动端适配（≤768px）
@@ -392,6 +396,11 @@ select:focus,input:focus{border-color:var(--accent)}
 
   /* ── 教程 ── */
   #guide-content{padding:14px 12px !important}
-  #guide-notes{width:auto !important;border-left:none;border-top:1px solid var(--border)}
+  #guide-notes{width:auto !important;border-left:none;border-top:1px solid var(--border);max-height:26vh;overflow-y:auto}
+
+  /* ── 3D 弹窗：竖屏改上下布局，画布区给足高度 ── */
+  #model-modal{padding:10px}
+  #model-modal > div{height:90vh !important}
+  #model-modal > div > div:nth-of-type(2){flex-direction:column}
 }
 .crash-count{flex:1;font-size:11.5px;color:var(--muted);text-align:center}
