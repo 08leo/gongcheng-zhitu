@@ -453,6 +453,21 @@ const App = (() => {
     });
     canvas.addEventListener('mouseup', () => guideOrbit.isDragging = false);
     canvas.addEventListener('mouseleave', () => guideOrbit.isDragging = false);
+    // 触摸：单指旋转（手机端）
+    canvas.addEventListener('touchstart', e => {
+      if (e.touches.length === 1) { guideOrbit.isDragging = true; guideOrbit.lastX = e.touches[0].clientX; guideOrbit.lastY = e.touches[0].clientY; }
+    }, { passive: true });
+    canvas.addEventListener('touchmove', e => {
+      if (!guideOrbit.isDragging || e.touches.length !== 1) return;
+      e.preventDefault();
+      const t0 = e.touches[0];
+      guideOrbit.theta -= (t0.clientX - guideOrbit.lastX) * 0.008;
+      guideOrbit.phi = Math.max(0.1, Math.min(Math.PI - 0.1, guideOrbit.phi + (t0.clientY - guideOrbit.lastY) * 0.008));
+      guideOrbit.lastX = t0.clientX; guideOrbit.lastY = t0.clientY;
+      updateGuideCamera();
+    }, { passive: false });
+    canvas.addEventListener('touchend', () => guideOrbit.isDragging = false);
+    canvas.addEventListener('touchcancel', () => guideOrbit.isDragging = false);
     canvas.addEventListener('wheel', e => {
       e.preventDefault();
       guideOrbit.radius = Math.max(60, Math.min(350, guideOrbit.radius + e.deltaY * 0.2));

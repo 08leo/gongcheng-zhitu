@@ -385,6 +385,11 @@ const Crash = (() => {
     init3D();
     bindEvents();
     setupDivider();
+    // 触摸设备：换提示文案
+    if ('ontouchstart' in window) {
+      const hint = document.querySelector('.crash-3d-hint');
+      if (hint) hint.textContent = '👋 单指旋转 3D 模型';
+    }
     select(0);
   }
 
@@ -704,6 +709,21 @@ const Crash = (() => {
     });
     canvas.addEventListener('mouseup', () => orbit.dragging = false);
     canvas.addEventListener('mouseleave', () => orbit.dragging = false);
+    // 触摸：单指旋转（手机端）
+    canvas.addEventListener('touchstart', e => {
+      if (e.touches.length === 1) { orbit.dragging = true; orbit.lx = e.touches[0].clientX; orbit.ly = e.touches[0].clientY; }
+    }, { passive: true });
+    canvas.addEventListener('touchmove', e => {
+      if (!orbit.dragging || e.touches.length !== 1) return;
+      e.preventDefault();
+      const t0 = e.touches[0];
+      orbit.theta -= (t0.clientX - orbit.lx) * 0.008;
+      orbit.phi = Math.max(0.08, Math.min(Math.PI - 0.08, orbit.phi + (t0.clientY - orbit.ly) * 0.008));
+      orbit.lx = t0.clientX; orbit.ly = t0.clientY;
+      updateCamera();
+    }, { passive: false });
+    canvas.addEventListener('touchend', () => orbit.dragging = false);
+    canvas.addEventListener('touchcancel', () => orbit.dragging = false);
     canvas.addEventListener('wheel', e => {
       e.preventDefault();
       orbit.radius = Math.max(70, Math.min(420, orbit.radius + e.deltaY * 0.2));

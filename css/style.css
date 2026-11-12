@@ -335,4 +335,57 @@ select:focus,input:focus{border-color:var(--accent)}
 .crash-answer .ans-line b{color:var(--accent2)}
 .crash-answer .pit-line{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);color:var(--warn)}
 .crash-nav{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:10px}
+
+/* ═══════════════════════════════════════
+   📱 移动端适配（≤768px）
+   三栏 → 纵向堆叠；题目列表 → 横滑 chips
+   ═══════════════════════════════════════ */
+@media(max-width:768px){
+  /* 顶栏：标题 + 横向标签 */
+  body{display:flex;flex-direction:column;overflow:hidden}
+  #topbar{height:auto;flex-wrap:wrap;padding:8px 10px 6px;gap:8px;flex-shrink:0}
+  #topbar h1{font-size:15px;flex:1;min-width:0}
+  .tabs{order:3;width:100%}
+  .tabs .tab-btn{flex:1;padding:9px 4px;font-size:13px}
+  #topbar #score-display{display:none}
+  #app{height:auto;flex:1;overflow:hidden}
+
+  /* 所有分区：纵向堆叠 + 整页滚动 */
+  .section{overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .section.active{display:flex;flex-direction:column}
+  .panel-left,.panel-right{width:auto !important;min-width:0 !important;max-width:none;border:none;border-bottom:1px solid var(--border);flex:none}
+  .panel-center{flex:none}
+
+  /* ── 速成模式 ── */
+  #sec-crash .crash-center{height:72vh}   /* 3D 40% + 三视图 60%，固定高度防塌陷 */
+  .crash-left h2,.crash-right h2{display:none}
+  .crash-cheat-wrap{display:none}          /* 速记表：手机上折叠隐藏，省出屏幕 */
+  .crash-list{display:flex;overflow-x:auto;overflow-y:hidden;padding:8px;gap:6px;flex:0 0 auto}
+  .crash-list::-webkit-scrollbar{height:0}
+  .crash-level{display:none}               /* 关卡分组标题在横滑中隐藏 */
+  .crash-item{flex-shrink:0;flex-direction:column;gap:4px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;margin:0;min-width:64px;text-align:center}
+  .crash-item.active{border-color:var(--accent)}
+  .crash-item .c-txt{font-size:11px;white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis}
+
+  /* 3D + 三视图：固定比例，隐藏拖动条 */
+  .crash-divider{display:none}
+  .crash-3d{height:40% !important}
+  .crash-switcher{flex-wrap:wrap;gap:4px;padding:8px 10px}
+  .crash-title-bar{font-size:13px;flex:1 1 100%;white-space:normal}
+
+  /* 右栏（思路/答案）跟随在下方 */
+  .crash-body{padding:12px}
+  .crash-nav{margin-top:6px}
+  .crash-nav .crash-count{display:none}    /* 快捷键提示手机上无意义 */
+
+  /* ── 分章节学习 ── */
+  .panel-body{padding:12px}
+  #sec-practice .panel-center{height:60vh;position:relative}
+  #content-area{position:static;height:auto;padding:16px 14px}
+  .view-switcher{flex-wrap:wrap;gap:4px;padding:8px 10px}
+
+  /* ── 教程 ── */
+  #guide-content{padding:14px 12px !important}
+  #guide-notes{width:auto !important;border-left:none;border-top:1px solid var(--border)}
+}
 .crash-count{flex:1;font-size:11.5px;color:var(--muted);text-align:center}
