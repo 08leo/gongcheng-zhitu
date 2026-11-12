@@ -336,6 +336,12 @@ select:focus,input:focus{border-color:var(--accent)}
 .crash-answer .pit-line{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);color:var(--warn)}
 .crash-nav{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:10px}
 
+/* ── 三视图 HTML 布局（教程课后习题 Views.renderLayout） ── */
+.three-view-layout{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.view-cell{position:relative;min-height:150px;background:#f5f0e8;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.view-cell .view-svg{position:absolute;top:0;left:0;width:100%;height:100%}
+.view-cell.answer{border-color:var(--success)}
+
 /* ═══════════════════════════════════════
    📱 移动端适配（≤768px）
    三栏 → 纵向堆叠；题目列表 → 横滑 chips

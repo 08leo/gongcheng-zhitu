@@ -573,6 +573,10 @@ const App = (() => {
     container.innerHTML = html;
     bindExampleEvents(chapter);
     bindExerciseEvents(chapter);
+    // 初始渲染"补画第三视图"题的题目画布
+    requestAnimationFrame(() => {
+      container.querySelectorAll('.exv-canvas').forEach(cv => renderCompleteCanvas(cv, false));
+    });
     const gc = document.getElementById('guide-center');
     if (gc) gc.scrollTop = 0;
   }
@@ -648,6 +652,15 @@ const App = (() => {
         <button class="judge-btn" data-ex="${ex.id}" data-val="false">✗ 错误</button>
       </div>`;
       inputHtml += `<div class="action-row"><button class="btn btn-primary btn-sm" data-action="submit-ex" data-ex="${ex.id}">提交答案</button><button class="btn btn-secondary btn-sm" data-action="show-ans-ex" data-ex="${ex.id}">查看答案解析</button></div>`;
+    } else if (ex.type === 'complete') {
+      // 补画第三视图题：题目视图 + 答案切换
+      const shapeBtn = ex.shapeId ? `<button class="btn-3d" data-shape="${ex.shapeId}">🔍 查看3D模型</button>` : '';
+      const given = (ex.given || ['front', 'top']).join(',');
+      inputHtml = `
+        <div class="exv-canvas" id="exv-${ex.id}" data-given="${given}" data-missing="${ex.missing || 'left'}" data-shape="${ex.shapeId || ''}" data-answer="0"></div>
+        <div style="margin:6px 0;color:var(--muted);font-size:13px">看题目视图，在纸上补画${({front:'主视图',top:'俯视图',left:'左视图'})[ex.missing] || '第三视图'}。</div>
+        ${shapeBtn}
+        <div class="action-row"><button class="btn btn-secondary btn-sm" data-action="show-ans-ex" data-ex="${ex.id}">👁 查看参考答案</button></div>`;
     } else if (ex.type === 'draw') {
       const shapeBtn = ex.shapeId ? `<button class="btn-3d" data-shape="${ex.shapeId}">🔍 查看3D模型</button>` : '';
       inputHtml = `<div style="margin:8px 0;color:var(--muted);font-size:13px">请在草稿纸上作答，完成后对照参考答案。${shapeBtn}</div>`;
@@ -679,7 +692,28 @@ const App = (() => {
     if (ex.type === 'choice') return `<b>${String.fromCharCode(65 + ex.answer)}. ${ex.options[ex.answer]}</b>`;
     if (ex.type === 'judge') return `<b>${ex.answer ? '正确' : '错误'}</b>`;
     if (ex.type === 'draw') return `<div class="draw-ref"><div class="ref-title">📐 参考答案</div><div class="ref-content">${ex.answer}</div></div>`;
+    if (ex.type === 'complete') return `<div class="draw-ref"><div class="ref-title">📐 参考答案（看上方画布对照）</div><div class="ref-content">${ex.analysis || ''}</div></div>`;
     return `<b>${ex.answer}</b>`;
+  }
+
+  // 渲染"补画第三视图"题的视图区（题目模式 / 答案模式）
+  // 优先用 Views.renderLayout（SVG，覆盖全部形状），失败回退到 Engine canvas 投影
+  function renderCompleteCanvas(cv, showAnswer) {
+    const shapeId = cv.dataset.shape;
+    if (!shapeId) return;
+    const given = cv.dataset.given ? cv.dataset.given.split(',') : ['front', 'top'];
+    const missing = cv.dataset.missing || 'left';
+    if (window.Views && Views.getViews(shapeId)) {
+      cv.innerHTML = Views.renderLayout(shapeId, { given, missing, showAnswer: showAnswer });
+    } else {
+      const shape = Shapes.getShape(shapeId);
+      if (!shape) { cv.innerHTML = '<div style="color:var(--danger);padding:12px">视图数据缺失</div>'; return; }
+      const c = document.createElement('canvas');
+      c.style.cssText = 'width:100%;height:240px;background:#f5f0e8;border:1px solid var(--border);border-radius:6px';
+      cv.innerHTML = '';
+      cv.appendChild(c);
+      Engine.renderExercisePaper(shape.geometry, c, { givenViews: given, missingView: missing, showAnswer: showAnswer });
+    }
   }
 
   function bindExampleEvents(chapter) {
@@ -738,6 +772,14 @@ const App = (() => {
       btn.addEventListener('click', () => {
         const ans = document.getElementById('ans-' + btn.dataset.ex);
         if (ans) ans.style.display = ans.style.display === 'none' ? 'block' : 'none';
+        // 补画题：同步切换画布到答案模式
+        const cv = document.getElementById('exv-' + btn.dataset.ex);
+        if (cv) {
+          const on = ans && ans.style.display === 'block';
+          cv.dataset.answer = on ? '1' : '0';
+          renderCompleteCanvas(cv, on);
+          if (ans) btn.textContent = on ? '🙈 收起答案' : '👁 查看参考答案';
+        }
       });
     });
   }
