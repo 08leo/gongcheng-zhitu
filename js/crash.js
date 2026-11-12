@@ -909,5 +909,8 @@ const Crash = (() => {
     });
   }
 
-  return { init, onShow, getCount: () => PROBLEMS.length, _drawRow: drawViewsRow, _PROBLEMS: PROBLEMS };
+  const api = { init, onShow, getCount: () => PROBLEMS.length, _drawRow: drawViewsRow, _PROBLEMS: PROBLEMS };
+  // 挂到 window：app.js 用 window.Crash 检测，const 声明不会自动挂 window
+  if (typeof window !== 'undefined') window.Crash = api;
+  return api;
 })();
