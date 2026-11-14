@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════
 // crash.js — ⚡ 考前速成模式（临时抱佛脚专用）
-// 只干一件事：把 12 道经典补三视图真题讲透
+// 只干一件事：把 18 道经典补三视图真题讲透
 //   题目视图 + 答案视图（自动投影，含虚线）
 //   直白思路（3 步） + 答案要点 + 易错点
 //   + 可旋转 3D 模型对照
@@ -75,6 +75,12 @@ const Crash = (() => {
       const V = [[pos.getX(i0), pos.getY(i0), pos.getZ(i0)],
                  [pos.getX(i1), pos.getY(i1), pos.getZ(i1)],
                  [pos.getX(i2), pos.getY(i2), pos.getZ(i2)]];
+      // 跳过零面积（退化）三角形：避免法线为 0 污染边表
+      {
+        const ax = V[1][0]-V[0][0], ay = V[1][1]-V[0][1], az = V[1][2]-V[0][2];
+        const bx = V[2][0]-V[0][0], by = V[2][1]-V[0][1], bz = V[2][2]-V[0][2];
+        if (Math.hypot(ay*bz-az*by, az*bx-ax*bz, ax*by-ay*bx) < 1e-8) continue;
+      }
       const D = V.map(dist);
       if (D.every(v => v <= EPS)) { faces.push([vi, vi + 1, vi + 2]); V.forEach(v => verts.push(v[0], v[1], v[2])); vi += 3; }
       else if (!D.some(v => v <= EPS)) { /* skip */ }
@@ -95,9 +101,19 @@ const Crash = (() => {
           }
         }
         if (out.length >= 3) {
-          const base = vi;
-          for (let i = 1; i < out.length - 1; i++) faces.push([base, base + i, base + i + 1]);
-          out.forEach(v => verts.push(...v)); vi += out.length;
+          // 过滤共线碎片（Newell 面积≈0 的多边形会产生法线为 0 的假三角形）
+          let nlx = 0, nly = 0, nlz = 0;
+          for (let i = 0; i < out.length; i++) {
+            const a = out[i], b = out[(i + 1) % out.length];
+            nlx += (a[1] - b[1]) * (a[2] + b[2]);
+            nly += (a[2] - b[2]) * (a[0] + b[0]);
+            nlz += (a[0] - b[0]) * (a[1] + b[1]);
+          }
+          if (Math.hypot(nlx, nly, nlz) > 1e-8) {
+            const base = vi;
+            for (let i = 1; i < out.length - 1; i++) faces.push([base, base + i, base + i + 1]);
+            out.forEach(v => verts.push(...v)); vi += out.length;
+          }
         }
       }
     }
@@ -140,14 +156,14 @@ const Crash = (() => {
     const u = new THREE.Vector3().crossVectors(ax, nrm).normalize();
     const v = new THREE.Vector3().crossVectors(nrm, u).normalize();
 
-    // 投影 + 极角，降序排列 → 盖子法线朝 -nrm（保留侧外侧）
+    // 投影 + 极角，升序排列 → 扇形三角形法线朝 +nrm（实体外侧）
     const ordered = pts.map(p => {
       const dx = p[0] - c[0], dy = p[1] - c[1], dz = p[2] - c[2];
       const pu = dx * u.x + dy * u.y + dz * u.z;
       const pv = dx * v.x + dy * v.y + dz * v.z;
       return { p, ang: Math.atan2(pv, pu) };
     });
-    ordered.sort((a, b) => b.ang - a.ang);
+    ordered.sort((a, b) => a.ang - b.ang);
 
     // 合并：原几何体 + 质心 + 边界点，扇形三角化
     const P = [], I = [];
@@ -362,6 +378,102 @@ const Crash = (() => {
       ],
       answer: '左视图 = 矩形 + 双曲线相贯线（前实后虚），曲线向小圆柱侧弯曲。',
       pitfall: '相贯线画成直线或方向弯反；虚实线搞混。'
+    },
+    {
+      no: 13, level: '难点', title: '圆柱与四棱柱正交（相贯线）', shapeName: '棱柱穿圆柱',
+      desc: '水平圆柱 r=15 长 90（轴线高 40），被 24×60×26 的四棱柱竖直穿过。',
+      probText: '已知形体的主视图和俯视图，补画左视图（含相贯线）。',
+      missingView: 'left', givenViews: ['front', 'top'],
+      build: () => merge([t(cylH(15, 90), 0, 40, 0), box(24, 60, 26)]),
+      approach: [
+        { t: '判类型', c: '平面体与曲面体相交 → 相贯线由几段线（素线段）拼成，不是一条光滑曲线。' },
+        { t: '找交线', c: '棱柱左、右侧面截圆柱得上下两条水平素线段（高 40±9）；前、后侧面截得另两条。' },
+        { t: '连段', c: '利用俯视图积聚性定交点，主视图连出水平线段，按"宽相等"搬到左视图。' }
+      ],
+      answer: '左视图 = 26×60 矩形 + 圆柱轮廓 + 相贯线（直线段拼接，前实后虚）。',
+      pitfall: '平面体相贯线是几段线的组合，别画成光滑弧；各段端点必须落在棱上。'
+    },
+    {
+      no: 14, level: '难点', title: '圆柱与圆锥正交（相贯线）', shapeName: '圆柱穿圆锥',
+      desc: '圆锥 r=35 h=65，被水平圆柱 r=16 长 90 在高 38 处正交穿过。',
+      probText: '已知形体的主视图和俯视图，补画左视图（含相贯线）。',
+      missingView: 'left', givenViews: ['front', 'top'],
+      build: () => merge([cone(35, 65), t(cylH(16, 90), 0, 38, 0)]),
+      approach: [
+        { t: '判类型', c: '圆柱与圆锥轴线正交 → 相贯线是空间曲线，弯向锥顶一侧。' },
+        { t: '用积聚性', c: '圆柱在主视图积聚为矩形，相贯线的正面投影已知，再求侧面投影。' },
+        { t: '特殊点', c: '最高/最低点在锥的主视图轮廓上，最前/最后点定左视图弯曲方向，纬圆法取一般点后光滑连线。' }
+      ],
+      answer: '左视图 = 三角形轮廓 + 圆柱端面圆 + 相贯线曲线（弯向锥顶，前实后虚）。',
+      pitfall: '相贯线弯曲方向画反（应向锥顶弯）；最低点不取在圆柱轴线高度上。'
+    },
+    {
+      no: 15, level: '难点', title: '两圆柱偏交（相贯线）', shapeName: '偏交圆柱',
+      desc: '竖直圆柱 r=30 h=70，水平圆柱 r=20 长 70 在高 48 处穿过，俯视图上两轴线错开 15。',
+      probText: '已知形体的主视图和俯视图，补画左视图（含相贯线）。',
+      missingView: 'left', givenViews: ['front', 'top'],
+      build: () => merge([cyl(30, 70), t(cylH(20, 70), 0, 48, 15)]),
+      approach: [
+        { t: '认偏交', c: '两轴线不相交（俯视图上错开）→ 相贯线上下不对称，这正是与正交的区别。' },
+        { t: '找特殊点', c: '最左/最右点在水平圆柱轮廓上；最高点偏向轴线错开的一侧，逐点标坐标。' },
+        { t: '连线', c: '相贯线向大圆柱方向弯，前实后虚；上下不对称，别画成对称弧。' }
+      ],
+      answer: '左视图 = 矩形 + 不对称相贯线（偏移侧弯得多），前实后虚。',
+      pitfall: '把偏交画成正交的对称相贯线；偏移方向在俯视图上量错。'
+    },
+    {
+      no: 16, level: '进阶', title: '双坡屋顶（屋檐）', shapeName: '双坡屋檐体',
+      desc: '屋檐底面 70×90，屋脊沿 90 长向居中，脊高 40，两坡对称降到檐口。',
+      probText: '已知形体的主视图和俯视图，补画左视图。',
+      missingView: 'left', givenViews: ['front', 'top'],
+      build: () => {
+        let g = clipClosed(box(70, 40, 90), 40, 35, 0, -1400);
+        return clipClosed(g, -40, 35, 0, -1400);
+      },
+      approach: [
+        { t: '认屋檐', c: '双坡屋顶 = 三棱柱。山墙（三角形端面）正对主视 → 主视图是三角形。' },
+        { t: '对尺寸', c: '山墙三角底 70、脊高 40；俯视图 = 70×90 矩形，屋脊是居中纵向直线。' },
+        { t: '补左视', c: '从左看是坡面侧 → 90×40 矩形，屋脊线正好是上边（可见），无内部线。' }
+      ],
+      answer: '左视图 = 90×40 矩形（坡面侧投影），屋脊线为上边。',
+      pitfall: '左视图画成三角形；三角形只出现在主视图（山墙朝正面）。'
+    },
+    {
+      no: 17, level: '难点', title: '带天窗的双坡屋顶', shapeName: '天窗屋檐体',
+      desc: '双坡屋顶 70×40×90，坡面上竖直立一个 18×26×24 的天窗，穿出坡面。',
+      probText: '已知形体的主视图和俯视图，补画左视图。',
+      missingView: 'left', givenViews: ['front', 'top'],
+      build: () => {
+        let g = clipClosed(box(70, 40, 90), 40, 35, 0, -1400);
+        g = clipClosed(g, -40, 35, 0, -1400);
+        return merge([g, t(box(18, 26, 24), 17, 8, 0)]);
+      },
+      approach: [
+        { t: '拆两块', c: '双坡屋顶 + 竖直天窗（18×26×24），天窗底部埋进坡面再穿出。' },
+        { t: '主视图', c: '三角形 + 天窗矩形从坡面伸出；天窗与坡面的交线位置由坡度定。' },
+        { t: '左视图', c: '坡面矩形 + 天窗矩形（宽 24 居中）；天窗伸进屋顶内部的轮廓画虚线。' }
+      ],
+      answer: '左视图 = 90×40 矩形 + 居中 24 宽天窗矩形，埋在坡面以下的部分画虚线。',
+      pitfall: '天窗与坡面的交线漏画；天窗伸进屋顶内的轮廓忘画虚线。'
+    },
+    {
+      no: 18, level: '难点', title: '四坡屋顶（庑殿顶）', shapeName: '庑殿顶屋檐体',
+      desc: '双坡屋顶上把屋脊缩短到 50，两端各加一个斜三角坡面，成四坡庑殿顶。',
+      probText: '已知形体的主视图和俯视图，补画左视图。',
+      missingView: 'left', givenViews: ['front', 'top'],
+      build: () => {
+        let g = clipClosed(box(70, 40, 90), 40, 35, 0, -1400);
+        g = clipClosed(g, -40, 35, 0, -1400);
+        g = clipClosed(g, 0, 1, 2, -90);
+        return clipClosed(g, 0, 1, -2, -90);
+      },
+      approach: [
+        { t: '认庑殿', c: '四坡顶 = 双坡 + 两端斜三角坡面；脊缩短，俯视图出现 4 条斜脊线。' },
+        { t: '主视图', c: '仍是三角形（端坡投影与主坡斜边重合），特征集中在俯视图的斜脊上。' },
+        { t: '左视图', c: '90×40 矩形左右上角被端坡切掉 → 从 (宽 25, 高 40) 斜到 (宽 45, 高 0)。' }
+      ],
+      answer: '左视图 = 90 宽矩形，左右上角各切一个斜角（端坡投影），中间保留短脊线。',
+      pitfall: '左视图忘切角；端坡斜脊线在俯视图上漏画（从脊端连到四角）。'
     }
   ];
 
@@ -412,7 +524,7 @@ const Crash = (() => {
     const el = document.getElementById('crash-list');
     if (!el) return;
     const levels = ['基础', '进阶', '难点'];
-    const levelLabel = { '基础': '第一关 · 基本体（保分）', '进阶': '第二关 · 切割/组合（拿分）', '难点': '第三关 · 相贯线（冲分）' };
+    const levelLabel = { '基础': '第一关 · 基本体（保分）', '进阶': '第二关 · 切割/组合（拿分）', '难点': '第三关 · 相贯线 & 屋檐（冲分）' };
     let html = '';
     levels.forEach(lv => {
       html += `<div class="crash-level">${levelLabel[lv]}</div>`;
@@ -438,9 +550,9 @@ const Crash = (() => {
     const p = PROBLEMS[idx];
     if (!p) return;
 
-    // 列表高亮
-    document.querySelectorAll('.crash-item').forEach((it, i) => {
-      it.classList.toggle('active', i === idx);
+    // 列表高亮（按 dataset.idx 对齐——DOM 按关卡分组渲染，顺序≠数组顺序）
+    document.querySelectorAll('.crash-item').forEach(it => {
+      it.classList.toggle('active', parseInt(it.dataset.idx) === idx);
     });
 
     // 标题 + 描述
